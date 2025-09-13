@@ -1,0 +1,1 @@
+alias bpk='pkexec bootc'

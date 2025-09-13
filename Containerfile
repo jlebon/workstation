@@ -1,4 +1,5 @@
 FROM quay.io/fedora/fedora-silverblue:42
+COPY overlay /
 RUN <<EOF
 set -xeuo pipefail
 dnf swap -y noopenh264 openh264
