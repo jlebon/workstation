@@ -1,0 +1,20 @@
+ARG RELEASEVER=42
+
+FROM quay.io/fedora/fedora:${RELEASEVER} AS pull
+ARG RELEASEVER
+RUN --mount=type=cache,rw,id=dnf-cache,target=/var/cache/dnf \
+  dnf install -y rpm-ostree ostree
+RUN --mount=type=cache,rw,id=repo-cache,target=/repo \
+    --mount=type=bind,target=/run/src,rw \
+  ostree init --repo=/repo --mode=archive && cp /run/src/config /repo/config
+RUN --mount=type=cache,rw,id=repo-cache,target=/repo \
+  ostree pull --repo=/repo fedora:fedora/${RELEASEVER}/x86_64/silverblue
+RUN --mount=type=cache,rw,id=repo-cache,target=/repo \
+    --mount=type=bind,target=/run/src,rw \
+  rpm-ostree compose container-encapsulate --repo=/repo --format-version=2 \
+    fedora:fedora/${RELEASEVER}/x86_64/silverblue oci-archive:/run/src/out.ociarchive
+
+FROM oci-archive:./out.ociarchive
+RUN --mount=type=bind,from=pull,target=/var/tmp \
+    --mount=type=bind,target=/run/src,rw \
+      rm /run/src/out.ociarchive

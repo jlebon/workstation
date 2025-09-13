@@ -1,0 +1,76 @@
+name: Encapsulator
+
+env:
+  QUAY_BASE: quay.io/jlebon/fedora-silverblue
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  query:
+    name: "Query Fedora versions"
+    runs-on: ubuntu-latest
+    outputs:
+      latest: ${{steps.query_versions.outputs.latest}}
+      matrix: ${{steps.query_versions.outputs.matrix}}
+    steps:
+      - name: Query Fedora versions
+        id: query_versions
+        run: |
+          set -xeuo pipefail
+          latest_supported=$(curl -s -L https://fedoraproject.org/releases.json | jq -r '[.[].version|select(test("^[0-9]+$"))]|max')
+          next_supported=$((latest_supported + 1))
+          previous_supported=$((latest_supported - 1))
+          echo "matrix=$(seq $previous_supported $next_supported | jq -cnR '[inputs]')" >> $GITHUB_OUTPUT
+          echo "latest=$latest_supported" >> $GITHUB_OUTPUT
+  encapsulate:
+    name: "Encapsulate OSTree commits"
+    needs: query
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        releasever: ${{fromJson(needs.query.outputs.matrix)}}
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@v1.3.0
+      - name: Check out repository
+        uses: actions/checkout@v4
+      # cargo-culted from rpm-ostree CI
+      # https://github.com/containers/podman/discussions/17362
+      - name: Get newer podman
+        run: |
+          set -xeuo pipefail
+          echo 'deb [trusted=yes] https://ftp.debian.org/debian/ testing main' | sudo tee /etc/apt/sources.list.d/testing.list
+          sudo apt update
+          sudo apt install -y crun/testing podman/testing skopeo/testing
+          # Something is confused in latest GHA here
+          sudo rm /var/lib/containers -rf
+      - name: Build
+        run: |
+          set -xeuo pipefail
+          n=${{ matrix.releasever }}
+          cd encapsulator
+          # can drop the -v once https://github.com/containers/buildah/issues/5952 is fixed
+          podman build -v $PWD:/run/src --security-opt=seccomp=unconfined --build-arg RELEASEVER=$n -t "${{ env.QUAY_BASE }}:$n" .
+      - name: Push
+        run: |
+          set -xeuo pipefail
+          mkdir -p ~/.docker
+          cat > ~/.docker/config.json <<EOF
+          ${{ secrets.QUAY_AUTH }}
+          EOF
+          n=${{ matrix.releasever }}
+          podman push "$QUAY_BASE:$n"
+          if [[ $n == ${{ needs.query.outputs.latest }} ]]; then
+            podman tag "$QUAY_BASE:$n" "$QUAY_BASE:latest"
+            podman push "$QUAY_BASE:latest"
+          fi
+          rm ~/.docker/config.json

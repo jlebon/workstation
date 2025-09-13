@@ -1,0 +1,9 @@
+[core]
+repo_version=1
+mode=archive-z2
+
+[remote "fedora"]
+url=https://ostree.fedoraproject.org
+gpg-verify=true
+gpgkeypath=/etc/pki/rpm-gpg/
+contenturl=mirrorlist=https://ostree.fedoraproject.org/mirrorlist
