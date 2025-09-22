@@ -7,7 +7,8 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '0 0 * * 6'
+    # run every day at noon
+    - cron: '0 12 * * *'
   workflow_dispatch:
 
 permissions:
