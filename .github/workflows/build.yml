@@ -53,6 +53,14 @@ jobs:
           sudo apt install -y crun/testing podman/testing skopeo/testing
           # Something is confused in latest GHA here
           sudo rm /var/lib/containers -rf
+      - name: Configure policy
+        run: |
+          set -xeuo pipefail
+          sudo mkdir -p /etc/containers/registries.d
+          sudo cp policy.json /etc/containers/
+          sudo cp quay.io-jlebon.yaml /etc/containers/registries.d/
+          sudo mkdir -p /etc/pki/containers/
+          sudo cp quay.io-jlebon.pub /etc/pki/containers/
       - name: Install cosign
         uses: sigstore/cosign-installer@main
         with:

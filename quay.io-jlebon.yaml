@@ -1,0 +1,5 @@
+docker:
+  quay.io/jlebon/fedora-silverblue:
+    use-sigstore-attachments: true
+  quay.io/jlebon/workstation:
+    use-sigstore-attachments: true

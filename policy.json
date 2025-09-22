@@ -1,0 +1,25 @@
+{
+    "default": [{ "type": "reject" }],
+    "transports": {
+        "docker": {
+            "quay.io/jlebon/fedora-silverblue": [
+                {
+                    "type": "sigstoreSigned",
+                    "keyPath": "/etc/pki/containers/quay.io-jlebon.pub",
+                    "signedIdentity": {
+                        "type": "matchRepository"
+                    }
+                }
+            ],
+            "quay.io/jlebon/workstation": [
+                {
+                    "type": "sigstoreSigned",
+                    "keyPath": "/etc/pki/containers/quay.io-jlebon.pub",
+                    "signedIdentity": {
+                        "type": "matchRepository"
+                    }
+                }
+            ]
+        }
+    }
+}
