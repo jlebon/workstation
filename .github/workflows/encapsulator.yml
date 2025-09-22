@@ -39,8 +39,6 @@ jobs:
       matrix:
         releasever: ${{fromJson(needs.query.outputs.matrix)}}
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@v1.3.0
       - name: Check out repository
         uses: actions/checkout@v4
       # cargo-culted from rpm-ostree CI
@@ -53,6 +51,10 @@ jobs:
           sudo apt install -y crun/testing podman/testing skopeo/testing
           # Something is confused in latest GHA here
           sudo rm /var/lib/containers -rf
+      - name: Install cosign
+        uses: sigstore/cosign-installer@main
+        with:
+          cosign-release: "v2.6.0"
       - name: Build
         run: |
           set -xeuo pipefail
@@ -67,10 +69,15 @@ jobs:
           cat > ~/.docker/config.json <<EOF
           ${{ secrets.QUAY_AUTH }}
           EOF
+          base64 --decode > ~/.cosign.key <<EOF
+          ${{ secrets.COSIGN_PRIVATE_KEY }}
+          EOF
           n=${{ matrix.releasever }}
-          podman push "$QUAY_BASE:$n"
+          podman push "$QUAY_BASE:$n" --digestfile digest
+          cosign sign -y --key ~/.cosign.key "$QUAY_BASE@$(cat digest)"
           if [[ $n == ${{ needs.query.outputs.latest }} ]]; then
             podman tag "$QUAY_BASE:$n" "$QUAY_BASE:latest"
             podman push "$QUAY_BASE:latest"
           fi
+          rm ~/.cosign.key
           rm ~/.docker/config.json

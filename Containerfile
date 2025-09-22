@@ -1,4 +1,6 @@
-FROM quay.io/fedora/fedora-silverblue:42
+ARG RELEASEVER=42
+
+FROM quay.io/jlebon/fedora-silverblue:${RELEASEVER}
 COPY overlay /
 RUN <<EOF
 set -xeuo pipefail

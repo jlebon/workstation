@@ -2,7 +2,6 @@ name: Build
 
 env:
   QUAY_BASE: quay.io/jlebon/workstation
-  FEDORA_SILVERBLUE: quay.io/fedora/fedora-silverblue
 
 on:
   push:
@@ -54,11 +53,16 @@ jobs:
           sudo apt install -y crun/testing podman/testing skopeo/testing
           # Something is confused in latest GHA here
           sudo rm /var/lib/containers -rf
+      - name: Install cosign
+        uses: sigstore/cosign-installer@main
+        with:
+          cosign-release: "v2.6.0"
       - name: Build
         run: |
           set -xeuo pipefail
           n=${{ matrix.releasever }}
-          podman build --security-opt=seccomp=unconfined --from $FEDORA_SILVERBLUE:$n -t "${{ env.QUAY_BASE }}:$n" .
+          podman build --security-opt=seccomp=unconfined \
+            --build-arg RELEASEVER=$n -t "${{ env.QUAY_BASE }}:$n" .
       - name: Push
         run: |
           set -xeuo pipefail
@@ -66,12 +70,17 @@ jobs:
           cat > ~/.docker/config.json <<EOF
           ${{ secrets.QUAY_AUTH }}
           EOF
+          base64 --decode > ~/.cosign.key <<EOF
+          ${{ secrets.COSIGN_PRIVATE_KEY }}
+          EOF
           n=${{ matrix.releasever }}
-          podman push "$QUAY_BASE:$n"
+          podman push "$QUAY_BASE:$n" --digestfile digest
+          cosign sign -y --key ~/.cosign.key "$QUAY_BASE@$(cat digest)"
           if [[ $n == ${{ needs.query.outputs.latest }} ]]; then
             podman tag "$QUAY_BASE:$n" "$QUAY_BASE:latest"
             podman push "$QUAY_BASE:latest"
           fi
+          rm ~/.cosign.key
           rm ~/.docker/config.json
       - name: Update README and Containerfile
         if: ${{ matrix.releasever == needs.query.outputs.latest }}
@@ -83,7 +92,7 @@ jobs:
           git config user.name 'Jonathan Lebon'
           git config user.email jonathan@jlebon.com
           sed -i "s/updated-.*-green/updated-$(date +%Y--%m--%d)-green/" README.md
-          sed -i "s,$FEDORA_SILVERBLUE:.*,$FEDORA_SILVERBLUE:${{ matrix.releasever }}," Containerfile
+          sed -i "s,RELEASEVER=.*,RELEASEVER=${{ matrix.releasever }}," Containerfile
           git add README.md Containerfile
           if git diff --quiet --staged --exit-code; then
             echo "README.md already up to date"
