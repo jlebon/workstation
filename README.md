@@ -9,8 +9,9 @@ This is my bootable container for my workstations based on Fedora Silverblue.
 ### Set up signature verification
 
 ```
+cd signing/
 # WARNING: this overwrites any custom policy.json
-sudo cp policy.json /etc/containers/
+sudo cp policy-strict-allow-others.json /etc/containers/policy.json
 sudo cp quay.io-jlebon.yaml /etc/containers/registries.d/
 sudo mkdir -p /etc/pki/containers/
 sudo cp quay.io-jlebon.pub /etc/pki/containers/

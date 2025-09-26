@@ -56,10 +56,10 @@ jobs:
         run: |
           set -xeuo pipefail
           sudo mkdir -p /etc/containers/registries.d
-          sudo cp policy.json /etc/containers/
-          sudo cp quay.io-jlebon.yaml /etc/containers/registries.d/
+          sudo cp signing/policy-strict.json /etc/containers/
+          sudo cp signing/quay.io-jlebon.yaml /etc/containers/registries.d/
           sudo mkdir -p /etc/pki/containers/
-          sudo cp quay.io-jlebon.pub /etc/pki/containers/
+          sudo cp signing/quay.io-jlebon.pub /etc/pki/containers/
       - name: Install cosign
         uses: sigstore/cosign-installer@main
         with:
