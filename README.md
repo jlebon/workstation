@@ -1,6 +1,6 @@
 # workstation
 
-[![quay.io repository](https://img.shields.io/badge/updated-2025--09--28-green)](https://quay.io/repository/jlebon/workstation)
+[![quay.io repository](https://img.shields.io/badge/updated-2025--09--29-green)](https://quay.io/repository/jlebon/workstation)
 
 This is my bootable container for my workstations based on Fedora Silverblue.
 
