@@ -70,7 +70,7 @@ jobs:
         run: |
           set -xeuo pipefail
           n=${{ matrix.releasever }}
-          podman build --security-opt=seccomp=unconfined \
+          podman build --security-opt=seccomp=unconfined -v $PWD:/run/src \
             --build-arg RELEASEVER=$n -t "${{ env.QUAY_BASE }}:$n" .
       - name: Push
         run: |
