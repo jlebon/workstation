@@ -21,7 +21,7 @@ RUN mkdir -p /var/tmp
 RUN --mount=type=bind,target=/run/src,rw \
   rm -f /run/src/out.ociarchive
 RUN --mount=type=bind,target=/run/src,rw \
-      rpm-ostree compose build-chunked-oci --max-layers 448 \
+      rpm-ostree compose build-chunked-oci --max-layers 64 \
         --bootc --format-version=2 --rootfs /target-rootfs \
         --output oci-archive:/run/src/out.ociarchive
 
