@@ -9,6 +9,7 @@ set -xeuo pipefail
 rpm-ostree override remove noopenh264 \
   --install openh264 --install mozilla-openh264
 rpm-ostree override remove gnome-software gnome-software-rpm-ostree
+# XXX: should be able to drop wireguard-tools once https://pagure.io/workstation-ostree-config/pull-request/705 merges
 rpm-ostree install wireguard-tools fzf inotify-tools wl-clipboard
 rm -rf /var && mkdir /var
 EOF

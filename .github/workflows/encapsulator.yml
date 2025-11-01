@@ -25,9 +25,11 @@ jobs:
         run: |
           set -xeuo pipefail
           latest_supported=$(curl -s -L https://fedoraproject.org/releases.json | jq -r '[.[].version|select(test("^[0-9]+$"))]|max')
-          next_supported=$((latest_supported + 1))
           previous_supported=$((latest_supported - 1))
-          echo "matrix=$(seq $previous_supported $next_supported | jq -cnR '[inputs]')" >> $GITHUB_OUTPUT
+          # if you're reading this and you know a better way, please let me know!
+          rawhide=$(curl -s -L https://src.fedoraproject.org/rpms/fedora-release/raw/rawhide/f/fedora-release.spec \
+                      | grep '%define dist_version' | grep -o -E '[0-9]+')
+          echo "matrix=$( (seq $previous_supported $((rawhide-1)); echo rawhide) | jq -cnR '[inputs]')" >> $GITHUB_OUTPUT
           echo "latest=$latest_supported" >> $GITHUB_OUTPUT
   encapsulate:
     name: "Encapsulate OSTree commits"
