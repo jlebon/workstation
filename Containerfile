@@ -5,9 +5,7 @@ COPY overlay /
 RUN <<EOF
 set -xeuo pipefail
 # there is no dnf in the classic silverblue yet, so use rpm-opstree
-# but also, rpm-ostree enforce base version locking
-rpm-ostree override remove noopenh264 \
-  --install openh264 --install mozilla-openh264
+# but also, rpm-ostree enforces base version locking
 rpm-ostree override remove gnome-software gnome-software-rpm-ostree
 # XXX: should be able to drop wireguard-tools once https://pagure.io/workstation-ostree-config/pull-request/705 merges
 rpm-ostree install wireguard-tools fzf inotify-tools wl-clipboard
