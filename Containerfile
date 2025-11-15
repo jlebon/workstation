@@ -2,15 +2,14 @@ ARG RELEASEVER=43
 
 FROM quay.io/jlebon/fedora-silverblue:${RELEASEVER} AS builder
 COPY overlay /
-RUN <<EOF
-set -xeuo pipefail
+RUN \
+set -xeuo pipefail; \
 # there is no dnf in the classic silverblue yet, so use rpm-opstree
 # but also, rpm-ostree enforces base version locking
-rpm-ostree override remove gnome-software gnome-software-rpm-ostree
+rpm-ostree override remove gnome-software gnome-software-rpm-ostree; \
 # XXX: should be able to drop wireguard-tools once https://pagure.io/workstation-ostree-config/pull-request/705 merges
-rpm-ostree install wireguard-tools fzf inotify-tools wl-clipboard
+rpm-ostree install wireguard-tools fzf inotify-tools wl-clipboard; \
 rm -rf /var && mkdir /var
-EOF
 
 # FROM builder AS chunker
 # COPY --from=builder / /target-rootfs
