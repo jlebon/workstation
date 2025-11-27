@@ -7,6 +7,10 @@ set -xeuo pipefail; \
 # there is no dnf in the classic silverblue yet, so use rpm-opstree
 # but also, rpm-ostree enforces base version locking
 rpm-ostree override remove gnome-software gnome-software-rpm-ostree; \
+# but do install dnf because it's helpful for the transient case
+rpm-ostree install dnf5; \
+# drop built-in firefox; we've moved to flatpak
+rpm-ostree override remove firefox firefox-langpacks; \
 # XXX: should be able to drop wireguard-tools once https://pagure.io/workstation-ostree-config/pull-request/705 merges
 rpm-ostree install wireguard-tools fzf inotify-tools wl-clipboard; \
 rm -rf /var && mkdir /var
