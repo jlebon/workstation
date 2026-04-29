@@ -1,4 +1,4 @@
-ARG RELEASEVER=43
+ARG RELEASEVER=44
 
 FROM quay.io/jlebon/fedora-silverblue:${RELEASEVER} AS builder
 COPY overlay /
