@@ -67,8 +67,13 @@ jobs:
         run: |
           set -xeuo pipefail
           n=${{ matrix.releasever }}
-          podman build --security-opt=seccomp=unconfined -v $PWD:/run/src \
-            --build-arg RELEASEVER=$n -t "${{ env.QUAY_BASE }}:$n" .
+          base_img="quay.io/jlebon/fedora-silverblue:$n"
+          podman pull "$base_img"
+          podman build --skip-unused-stages=false \
+            --security-opt=seccomp=unconfined -v $PWD:/run/src \
+            --build-arg RELEASEVER=$n \
+            --build-arg "CHUNKAH_CONFIG_STR=$(podman inspect $base_img)" \
+            -t "${{ env.QUAY_BASE }}:$n" .
       - name: Push
         run: |
           set -xeuo pipefail
