@@ -1,6 +1,7 @@
 ARG RELEASEVER=44
 
 FROM quay.io/jlebon/fedora-silverblue:${RELEASEVER} AS builder
+ARG RELEASEVER
 COPY overlay /
 # XXX: can't use heredoc; the GitHub Actions buildah is too old
 RUN \
@@ -14,9 +15,8 @@ rpm-ostree install dnf5; \
 rpm-ostree override remove firefox firefox-langpacks; \
 # XXX: should be able to drop wireguard-tools once https://pagure.io/workstation-ostree-config/pull-request/705 merges
 rpm-ostree install wireguard-tools fzf inotify-tools wl-clipboard ibus-speech-to-text; \
-. /usr/lib/os-release; \
 curl -fsSLo /etc/yum.repos.d/scottames-ghostty.repo \
-  "https://copr.fedorainfracloud.org/coprs/scottames/ghostty/repo/fedora-${VERSION_ID}/scottames-ghostty-fedora-${VERSION_ID}.repo"; \
+  "https://copr.fedorainfracloud.org/coprs/scottames/ghostty/repo/fedora-${RELEASEVER}/scottames-ghostty-fedora-${RELEASEVER}.repo"; \
 rpm-ostree install ghostty; \
 rm -rf /var; \
 mkdir /var
