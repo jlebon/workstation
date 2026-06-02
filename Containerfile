@@ -21,12 +21,12 @@ rpm-ostree install ghostty; \
 rm -rf /var; \
 mkdir /var
 
-FROM quay.io/coreos/chunkah AS chunkah
+FROM quay.io/coreos/chunkah:dev AS chunkah
 ARG CHUNKAH_CONFIG_STR
 RUN --mount=from=builder,src=/,target=/chunkah,ro \
     --mount=type=bind,target=/run/src,rw \
         chunkah build --prune /sysroot/ --max-layers 128 \
           --label ostree.commit- --label ostree.final-diffid- \
-          > /run/src/out.ociarchive
+          --output oci:/run/src/out
 
-FROM oci-archive:out.ociarchive
+FROM oci:out
