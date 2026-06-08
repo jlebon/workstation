@@ -14,7 +14,7 @@ rpm-ostree install dnf5; \
 # drop built-in firefox; we've moved to flatpak
 rpm-ostree override remove firefox firefox-langpacks; \
 # XXX: should be able to drop wireguard-tools once https://pagure.io/workstation-ostree-config/pull-request/705 merges
-rpm-ostree install wireguard-tools fzf inotify-tools wl-clipboard ibus-speech-to-text; \
+rpm-ostree install wireguard-tools fzf inotify-tools wl-clipboard; \
 curl -fsSLo /etc/yum.repos.d/scottames-ghostty.repo \
   "https://copr.fedorainfracloud.org/coprs/scottames/ghostty/repo/fedora-${RELEASEVER}/scottames-ghostty-fedora-${RELEASEVER}.repo"; \
 rpm-ostree install ghostty; \
