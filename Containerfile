@@ -13,7 +13,7 @@ rpm-ostree override remove gnome-software gnome-software-rpm-ostree; \
 rpm-ostree install dnf5; \
 # drop built-in firefox; we've moved to flatpak
 rpm-ostree override remove firefox firefox-langpacks; \
-rpm-ostree install fzf inotify-tools wl-clipboard; \
+rpm-ostree install fzf inotify-tools; \
 curl -fsSLo /etc/yum.repos.d/scottames-ghostty.repo \
   "https://copr.fedorainfracloud.org/coprs/scottames/ghostty/repo/fedora-${RELEASEVER}/scottames-ghostty-fedora-${RELEASEVER}.repo"; \
 rpm-ostree install ghostty; \
