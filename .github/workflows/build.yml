@@ -37,28 +37,26 @@ jobs:
     name: "Build Workstation container images"
     needs: query
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/fedora/fedora:latest
+      options: --privileged --cgroupns=host -v /var/lib/containers -v /var/tmp -v /tmp
     strategy:
       fail-fast: false
       matrix:
         releasever: ${{fromJson(needs.query.outputs.matrix)}}
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@v1.3.1
+      - name: Install tools
+        run: dnf install -y podman git
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Install podman
-        run: |
-          set -xeuo pipefail
-          sudo apt-get update
-          sudo apt-get -y install podman
       - name: Configure policy
         run: |
           set -xeuo pipefail
-          sudo mkdir -p /etc/containers/registries.d
-          sudo cp signing/policy-strict.json /etc/containers/
-          sudo cp signing/quay.io-jlebon.yaml /etc/containers/registries.d/
-          sudo mkdir -p /etc/pki/containers/
-          sudo cp signing/quay.io-jlebon.pub /etc/pki/containers/
+          mkdir -p /etc/containers/registries.d
+          cp signing/policy-strict.json /etc/containers/
+          cp signing/quay.io-jlebon.yaml /etc/containers/registries.d/
+          mkdir -p /etc/pki/containers/
+          cp signing/quay.io-jlebon.pub /etc/pki/containers/
       - name: Install cosign
         uses: sigstore/cosign-installer@main
         with:
@@ -68,8 +66,9 @@ jobs:
           set -xeuo pipefail
           n=${{ matrix.releasever }}
           base_img="quay.io/jlebon/fedora-silverblue:$n"
-          podman pull "$base_img"
-          podman build --skip-unused-stages=false \
+          # --retry=12 gives ~1h of exponential backoff for transient registry errors
+          podman pull --retry=12 "$base_img"
+          podman build --retry=12 --skip-unused-stages=false \
             --security-opt=seccomp=unconfined -v $PWD:/run/src \
             --build-arg RELEASEVER=$n \
             --build-arg "CHUNKAH_CONFIG_STR=$(podman inspect $base_img)" \
@@ -85,11 +84,11 @@ jobs:
           ${{ secrets.COSIGN_PRIVATE_KEY }}
           EOF
           n=${{ matrix.releasever }}
-          podman push "$QUAY_BASE:$n" --digestfile digest
+          podman push --retry=12 "$QUAY_BASE:$n" --digestfile digest
           cosign sign -y --key ~/.cosign.key "$QUAY_BASE@$(cat digest)"
           if [[ $n == ${{ needs.query.outputs.latest }} ]]; then
             podman tag "$QUAY_BASE:$n" "$QUAY_BASE:latest"
-            podman push "$QUAY_BASE:latest"
+            podman push --retry=12 "$QUAY_BASE:latest"
           fi
           rm ~/.cosign.key
           rm ~/.docker/config.json

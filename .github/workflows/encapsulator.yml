@@ -35,20 +35,18 @@ jobs:
     name: "Encapsulate OSTree commits"
     needs: query
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/fedora/fedora:latest
+      options: --privileged --cgroupns=host -v /var/lib/containers -v /var/tmp -v /tmp
     strategy:
       fail-fast: false
       matrix:
         releasever: ${{fromJson(needs.query.outputs.matrix)}}
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@v1.3.1
+      - name: Install tools
+        run: dnf install -y podman
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Install podman
-        run: |
-          set -xeuo pipefail
-          sudo apt-get update
-          sudo apt-get -y install podman
       - name: Install cosign
         uses: sigstore/cosign-installer@main
         with:
@@ -59,7 +57,8 @@ jobs:
           n=${{ matrix.releasever }}
           cd encapsulator
           # can drop the -v once https://github.com/containers/buildah/issues/5952 is fixed
-          podman build -v $PWD:/run/src --security-opt=seccomp=unconfined --build-arg RELEASEVER=$n -t "${{ env.QUAY_BASE }}:$n" .
+          # --retry=12 gives ~1h of exponential backoff for transient registry errors
+          podman build --retry=12 -v $PWD:/run/src --security-opt=seccomp=unconfined --build-arg RELEASEVER=$n -t "${{ env.QUAY_BASE }}:$n" .
       - name: Push
         run: |
           set -xeuo pipefail
@@ -71,11 +70,11 @@ jobs:
           ${{ secrets.COSIGN_PRIVATE_KEY }}
           EOF
           n=${{ matrix.releasever }}
-          podman push "$QUAY_BASE:$n" --digestfile digest
+          podman push --retry=12 "$QUAY_BASE:$n" --digestfile digest
           cosign sign -y --key ~/.cosign.key "$QUAY_BASE@$(cat digest)"
           if [[ $n == ${{ needs.query.outputs.latest }} ]]; then
             podman tag "$QUAY_BASE:$n" "$QUAY_BASE:latest"
-            podman push "$QUAY_BASE:latest"
+            podman push --retry=12 "$QUAY_BASE:latest"
           fi
           rm ~/.cosign.key
           rm ~/.docker/config.json
