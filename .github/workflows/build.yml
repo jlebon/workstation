@@ -47,6 +47,8 @@ jobs:
     steps:
       - name: Install tools
         run: dnf install -y podman git gettext
+      - name: Configure git
+        run: git config --global --add safe.directory '*'
       - name: Check out repository
         uses: actions/checkout@v4
       - name: Configure policy
