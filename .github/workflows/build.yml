@@ -50,7 +50,7 @@ jobs:
       - name: Configure git
         run: git config --global --add safe.directory '*'
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Configure policy
         run: |
           set -xeuo pipefail
@@ -60,9 +60,7 @@ jobs:
           mkdir -p /etc/pki/containers/
           cp signing/quay.io-jlebon.pub /etc/pki/containers/
       - name: Install cosign
-        uses: sigstore/cosign-installer@main
-        with:
-          cosign-release: "v2.6.0"
+        uses: sigstore/cosign-installer@v4.1.2
       - name: Check base image exists
         id: check_base
         run: |
