@@ -51,7 +51,20 @@ jobs:
         uses: sigstore/cosign-installer@main
         with:
           cosign-release: "v2.6.0"
+      - name: Check ref exists
+        id: check_ref
+        run: |
+          set -xeuo pipefail
+          n=${{ matrix.releasever }}
+          mirror=$(curl -sf https://ostree.fedoraproject.org/mirrorlist | head -1)
+          if curl -sf --head "${mirror}refs/heads/fedora/${n}/x86_64/silverblue" >/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::Ref fedora/${n}/x86_64/silverblue not found in remote, skipping"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
       - name: Build
+        if: steps.check_ref.outputs.exists == 'true'
         run: |
           set -xeuo pipefail
           n=${{ matrix.releasever }}
@@ -60,6 +73,7 @@ jobs:
           # --retry=12 gives ~1h of exponential backoff for transient registry errors
           podman build --retry=12 -v $PWD:/run/src --security-opt=seccomp=unconfined --build-arg RELEASEVER=$n -t "${{ env.QUAY_BASE }}:$n" .
       - name: Push
+        if: steps.check_ref.outputs.exists == 'true'
         run: |
           set -xeuo pipefail
           mkdir -p ~/.docker
