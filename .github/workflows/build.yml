@@ -46,7 +46,7 @@ jobs:
         releasever: ${{fromJson(needs.query.outputs.matrix)}}
     steps:
       - name: Install tools
-        run: dnf install -y podman git gettext
+        run: dnf install -y podman git gettext skopeo
       - name: Configure git
         run: git config --global --add safe.directory '*'
       - name: Check out repository
@@ -63,7 +63,19 @@ jobs:
         uses: sigstore/cosign-installer@main
         with:
           cosign-release: "v2.6.0"
+      - name: Check base image exists
+        id: check_base
+        run: |
+          set -xeuo pipefail
+          n=${{ matrix.releasever }}
+          if skopeo inspect "docker://quay.io/jlebon/fedora-silverblue:$n" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::Base image quay.io/jlebon/fedora-silverblue:$n not found, skipping"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
       - name: Build
+        if: steps.check_base.outputs.exists == 'true'
         run: |
           set -xeuo pipefail
           n=${{ matrix.releasever }}
@@ -76,6 +88,7 @@ jobs:
             --build-arg "CHUNKAH_CONFIG_STR=$(podman inspect $base_img)" \
             -t "${{ env.QUAY_BASE }}:$n" .
       - name: Push
+        if: steps.check_base.outputs.exists == 'true'
         run: |
           set -xeuo pipefail
           mkdir -p ~/.docker
@@ -95,7 +108,7 @@ jobs:
           rm ~/.cosign.key
           rm ~/.docker/config.json
       - name: Update README and Containerfile
-        if: ${{ matrix.releasever == needs.query.outputs.latest }}
+        if: steps.check_base.outputs.exists == 'true' && matrix.releasever == needs.query.outputs.latest
         run: |
           # This is load-bearing: GitHub will disable the job if the repo
           # doesn't stay active.  Do not enable branch protection for main;
