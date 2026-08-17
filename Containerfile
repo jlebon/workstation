@@ -6,6 +6,11 @@ COPY overlay /
 # XXX: can't use heredoc; the GitHub Actions buildah is too old
 RUN \
 set -xeuo pipefail; \
+# fedora-repos >= 45 ships the Fedora repo files under
+# /usr/share/dnf5/repos.d/ and leaves /etc/yum.repos.d/ for third-party
+# repos only; rpm-ostree reads from /etc/yum.repos.d/, so merge the Fedora
+# repos there. No-op on older releases where /usr/share/dnf5/repos.d/ doesn't exist.
+[ -d /usr/share/dnf5/repos.d ] && cp -a /usr/share/dnf5/repos.d/. /etc/yum.repos.d/ || true; \
 # there is no dnf in the classic silverblue yet, so use rpm-ostree
 # but also, rpm-ostree enforces base version locking
 rpm-ostree override remove gnome-software gnome-software-rpm-ostree; \
