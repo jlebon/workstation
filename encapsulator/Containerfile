@@ -3,7 +3,13 @@ ARG RELEASEVER
 FROM quay.io/fedora/fedora:${RELEASEVER} AS pull
 ARG RELEASEVER
 RUN --mount=type=cache,id=dnf-cache,target=/var/cache/dnf \
-  dnf install -y rpm-ostree ostree
+  dnf install -y rpm-ostree ostree && \
+  # fedora-gpg-keys >= 45 ships the Fedora signing keys under
+  # /usr/share/pki/rpm-gpg/ and no longer installs them into /etc/pki/rpm-gpg/;
+  # older releases keep them in /etc/pki/rpm-gpg/. Ensure
+  # /usr/share/pki/rpm-gpg exists so the ostree remote config can list both key
+  # paths: ostree errors if a listed gpgkeypath does not exist.
+  mkdir -p /usr/share/pki/rpm-gpg
 RUN --mount=type=cache,id=repo-cache,target=/repo \
     --mount=type=bind,target=/run/src,rw \
   ostree init --repo=/repo --mode=archive && cp /run/src/config /repo/config
