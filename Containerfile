@@ -1,4 +1,4 @@
-ARG RELEASEVER=44
+ARG RELEASEVER=45
 
 FROM quay.io/jlebon/fedora-silverblue:${RELEASEVER} AS builder
 ARG RELEASEVER
