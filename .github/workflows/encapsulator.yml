@@ -49,6 +49,10 @@ jobs:
         uses: actions/checkout@v7
       - name: Install cosign
         uses: sigstore/cosign-installer@v4.1.2
+        with:
+          # need to stick to v2 for now since container-libs doesn't support it yet
+          # https://github.com/podman-container-tools/container-libs/issues/388
+          cosign-release: "v2.6.5"
       - name: Check ref exists
         id: check_ref
         run: |
